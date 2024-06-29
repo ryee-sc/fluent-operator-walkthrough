@@ -15,6 +15,11 @@
 
 # fluent-http service:
 
+deploy fluent services
+```
+kubectl apply -f fluentd-poc.yaml
+```
+
 get config
 ```
 kubectl -n fluent get secrets fluentd-http-config -ojson | jq '.data."app.conf"' | awk -F '"' '{printf $2}' | base64 --decode
