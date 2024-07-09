@@ -15,6 +15,11 @@
 
 # fluent-http service:
 
+deploy kafka ui service
+```
+kubectl apply -f kafka-ui.yaml
+```
+
 deploy fluent services
 ```
 kubectl apply -f fluentd-poc.yaml
