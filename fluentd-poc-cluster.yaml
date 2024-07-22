@@ -1,0 +1,89 @@
+apiVersion: fluentd.fluent.io/v1alpha1
+kind: Fluentd
+metadata:
+  name: fluentd-http
+  labels:
+    app.kubernetes.io/name: fluentd
+spec:
+  globalInputs:
+    - http: 
+        bind: 0.0.0.0
+        port: 9880
+  replicas: 1
+  # image: kubesphere/fluentd:v1.14.4
+  # image: docker.io/library/fluentd-custom:latest
+  # imagePullPolicy: never
+  image: localhost:5000/fluentd-custom:latest
+  fluentdCfgSelector: 
+    matchLabels:
+      config.fluentd.fluent.io/mode: "fluentd-only" 
+  logLevel: trace
+---
+apiVersion: fluentd.fluent.io/v1alpha1
+kind: ClusterFluentdConfig
+metadata:
+  name: fluentd-only-config
+  labels:
+    config.fluentd.fluent.io/mode: "fluentd-only" 
+spec:
+  clusterOutputSelector:
+    matchLabels:
+      output.fluentd.fluent.io/mode: "fluentd-only"
+  clusterFilterSelector:
+    matchLabels:
+      filter.fluentd.fluent.io/mode: "fluentd-only"
+---
+apiVersion: fluentd.fluent.io/v1alpha1
+kind: ClusterOutput
+metadata:
+  name: fluentd-output-kafka-2
+  labels:
+    output.fluentd.fluent.io/mode: "fluentd-only"
+spec: 
+  outputs: 
+  - kafka:
+      brokers: "my-cluster-kafka-brokers.kafka.svc:9092"
+      topicKey: nil
+      defaultTopic: test
+      useEventTime: true
+      requiredAcks: -1
+      compressionCodec: gzip
+    format:
+      type: json
+    buffer:
+      tag: topic
+      type: file
+      path: /var/log/td-agent/buffer/td
+      flushInterval: 6s
+    logLevel: trace
+---
+apiVersion: fluentd.fluent.io/v1alpha1
+kind: ClusterFilter
+metadata:
+  name: fluentd-filter
+  labels:
+    filter.fluentd.fluent.io/mode: "fluentd-only"
+spec:
+  filters:
+  - customPlugin:
+    # this config doesn't quite work correctly: plugin loads but doesn't get picked up by kafka
+      config: | 
+        <match add.*>
+          @type add
+          add_tag_prefix debug
+          uuid true # optional 
+          <pair>
+            hoge moge
+            hogehoge mogemoge
+          </pair>
+        </match>
+  - recordTransformer:
+      records:
+        - key: hello
+          value: world
+        - key: tag
+          value: "${tag}"
+        - key: tag2
+          value: "${tag}"
+        - key: what
+          value: "is this"
