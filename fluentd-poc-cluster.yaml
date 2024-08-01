@@ -87,3 +87,4 @@ spec:
           value: "${tag}"
         - key: what
           value: "is this"
+      enableRuby: true
